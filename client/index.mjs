@@ -12,13 +12,15 @@ const main = apiKey => {
     const ws = connect(apiKey);
     ws.addEventListener("message", message => {
         let data = JSON.parse(message.data);
-            if (data.type === "paint" || data.type === "setPoint")
+            if (data.type === "paint")
                 drawer.putArray(data.payload);
+            else if (data.type === "setPoint")
+                drawer.put(data.payload.x, data.payload.y, data.payload.color)
     });
 
     drawer.onClick = (x, y) => {
         ws.send(JSON.stringify({
-            type: 'putPoint',
+            type: 'setPoint',
             payload: {
                 x: x,
                 y: y,

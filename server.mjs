@@ -61,19 +61,21 @@ wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
         console.log('received: %s', message);
         const data = JSON.parse(message).payload;
-        place[data.x + data.y * size] = data.color;
-        wss.clients.forEach(function each(client) {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    type: "setPoint",
-                    payload: {
-                        x: data.x,
-                        y: data.y,
-                        color: data.color,
-                    },
-                }));
-            }
-        });
+        if (data.x < size && data.y < size && colors.includes(data.color)) {
+            place[data.x + data.y * size] = data.color;
+            wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "setPoint",
+                        payload: {
+                            x: data.x,
+                            y: data.y,
+                            color: data.color
+                        },
+                    }));
+                }
+            });
+        }
     });
 
     ws.send(JSON.stringify({type: 'paint', payload: place}));
