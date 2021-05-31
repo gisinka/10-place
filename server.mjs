@@ -9,7 +9,10 @@ const apiKeys = new Set([
     "c08c9038-693d-4669-98cd-9f0dd5ef06bf",
     "4b1545c4-4a70-4727-9ea1-152ed4c84ae2",
     "4a226908-aa3e-4a34-a57d-1f3d1f6cba84",
+    "рецепт хороших пельменей прост: много мяса, мало теста"
 ]);
+
+const connections = new WeakMap();
 
 const colors = [
     "#140c1c",
@@ -83,8 +86,15 @@ wss.on('connection', function connection(ws) {
 
 server.on("upgrade", (req, socket, head) => {
     const url = new URL(req.url, req.headers.origin);
+    let apiKey = url.searchParams.get('apiKey');
     console.log(url);
-    wss.handleUpgrade(req, socket, head, (ws) => {
-        wss.emit("connection", ws, req);
-    });
+    if (apiKeys.has(apiKey)) {
+        wss.handleUpgrade(req, socket, head, (ws) => {
+            connections.set(ws, apiKey);
+            wss.emit("connection", ws, req);
+        });
+    } else {
+        console.log("Аааа, сокет разорвало, недостойный с ключем: " + apiKey)
+        socket.destroy()
+    }
 });
