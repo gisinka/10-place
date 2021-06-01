@@ -16,6 +16,8 @@ const main = apiKey => {
             drawer.putArray(data.payload);
         else if (data.type === "setPoint")
             drawer.put(data.payload.x, data.payload.y, data.payload.color)
+        else if (data.type === "timeout")
+            alert(`В следующий раз вы можете нарисовать в ${new Date(data.time)}`)
     });
 
     drawer.onClick = (x, y) => {

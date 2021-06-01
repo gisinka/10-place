@@ -12,7 +12,7 @@ const apiKeys = new Set([
     "рецепт хороших пельменей прост: много мяса, мало теста"
 ]);
 
-const connections = new WeakMap();
+const clients = new WeakMap();
 
 const colors = [
     "#140c1c",
@@ -64,8 +64,12 @@ wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
         console.log('received: %s', message);
         const data = JSON.parse(message).payload;
-        if (data.x < size && data.y < size && colors.includes(data.color)) {
+        if (data.x < size && data.y < size && colors.includes(data.color) && new Date(clients.get(ws).time) < new Date()) {
             place[data.x + data.y * size] = data.color;
+            clients.set(ws, {
+                apiKey: clients.get(ws).apiKey,
+                time: new Date((new Date).valueOf() + 2 * 1000).toISOString()
+            });
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({
@@ -78,7 +82,11 @@ wss.on('connection', function connection(ws) {
                     }));
                 }
             });
-        }
+        } else
+            ws.send(JSON.stringify({
+                type: "timeout",
+                time: clients.get(ws).time
+            }))
     });
 
     ws.send(JSON.stringify({type: 'paint', payload: place}));
@@ -90,7 +98,10 @@ server.on("upgrade", (req, socket, head) => {
     console.log(url);
     if (apiKeys.has(apiKey)) {
         wss.handleUpgrade(req, socket, head, (ws) => {
-            connections.set(ws, apiKey);
+            clients.set(ws, {
+                apiKey: apiKey,
+                time: new Date((new Date).valueOf() + 2 * 1000).toISOString()
+            });
             wss.emit("connection", ws, req);
         });
     } else {
